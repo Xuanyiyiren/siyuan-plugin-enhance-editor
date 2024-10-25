@@ -33,6 +33,8 @@ module.exports = (env, argv) => {
                 {from: "README*.md", to: "./dist/"},
                 {from: "plugin.json", to: "./dist/"},
                 {from: "src/i18n/", to: "./dist/i18n/"},
+                {from: "assets/", to: "./dist/assets/"},
+                {from: "completions/", to: "./dist/completions/"}
             ],
         }));
         plugins.push(new ZipPlugin({
@@ -51,6 +53,8 @@ module.exports = (env, argv) => {
                 {from: "icon.png", to: "./"},
                 {from: "README*.md", to: "./"},
                 {from: "plugin.json", to: "./"},
+                {from: "assets/", to: "./assets/"},
+                {from: "completions/", to: "./completions/"}
             ],
         }));
     }

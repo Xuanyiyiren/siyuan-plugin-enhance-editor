@@ -3,19 +3,21 @@ import {
     getFrontend,
 } from "siyuan";
 import "./index.scss";
-import { ILogger, createLogger } from "./simple-logger";
+import { ILogger, createLogger } from "./utils/simple-logger";
 import { EditorView, keymap } from "@codemirror/view";
 import { EditorState } from "@codemirror/state";
 import { vscodeKeymap } from "@replit/codemirror-vscode-keymap";
 import { autocompletion, closeBrackets, CompletionContext} from "@codemirror/autocomplete";
-import { mathCompletionList } from "./mathCompletion";
-import { selfCompletionList } from "./selfCompletion";
+import {EditorCompletions} from "./editorCompletions";
+import KernelApi from "./api/kernel-api";
+import { isDev } from "./utils/constants";
 
 const STORAGE_NAME = "menu-config";
 
-export default class PluginSidebarMemo extends Plugin {
+export default class PluginEnhanceEditor extends Plugin {
 
     private isMobile: boolean;
+    public kernelApi: KernelApi;
 
     private logger: ILogger;
     // 标记是否textarea为自动更新
@@ -36,6 +38,7 @@ export default class PluginSidebarMemo extends Plugin {
     async onLayoutReady() {
         await this.loadData(STORAGE_NAME);
 
+        this.kernelApi = new KernelApi();
         this.updateMarker = false;
         this.initHandleFunctions();
     }
@@ -45,11 +48,11 @@ export default class PluginSidebarMemo extends Plugin {
     }
 
     private initHandleFunctions() {
-        this.eventBus.on("open-noneditableblock", this.loadCodeMirror);
+        this.eventBus.on("open-noneditableblock", this.loadCodeMirror.bind(this));
     }
 
-    private loadCodeMirror(ev: Event) {
-        // if (isDev) this.logger.info("事件触发open-noneditableblock, event=>", ev);
+    private async loadCodeMirror(ev: Event) {
+        if (isDev) this.logger.info("事件触发open-noneditableblock, event=>", ev);
         // console.log(ev);
         const protyle_util = (ev as any).detail.toolbar.subElement;
         const ref_textarea = (protyle_util as HTMLElement).querySelector("textarea");
@@ -64,7 +67,7 @@ export default class PluginSidebarMemo extends Plugin {
         // 右下角的可拖动手柄
         const dragHandle = document.createElement("div");
         // container.setAttribute("style", ref_textarea.style.cssText);
-        dragHandle.setAttribute("style", "width: 0px; height: 0px; border-bottom:10px solid grey;border-left:10px solid transparent;position: absolute;bottom: 0;right: 0;cursor: nwse-resize;");
+        dragHandle.setAttribute("style", "width: 0px; height: 0px; border-bottom:1em solid grey;border-left:1em solid transparent;position: absolute;bottom: 0;right: 0;cursor: nwse-resize;");
         container.appendChild(dragHandle);
         function processResize(container:HTMLElement, handle:HTMLElement) {
             let isResizing = false;
@@ -110,16 +113,17 @@ export default class PluginSidebarMemo extends Plugin {
             }
         });
 
+        // 实时读取补全
+        const editorCompletions = new EditorCompletions(this);
+        const completionList = await editorCompletions.get();
+
         function mathCompletions(context: CompletionContext) {
             const word = context.matchBefore(/(\\[\w\{\}]*)/);
             if (!word || (word.from == word.to && !context.explicit))
                 return null;
             return {
                 from: word.from,
-                options: [
-                    ...mathCompletionList,
-                    ...selfCompletionList
-                ]
+                options: completionList
             };
         }
 
