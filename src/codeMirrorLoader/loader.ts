@@ -1,5 +1,6 @@
-import { EditorView, keymap, ViewUpdate } from "@codemirror/view";
+import { EditorView, KeyBinding, keymap, ViewUpdate } from "@codemirror/view";
 import { EditorState } from "@codemirror/state";
+import { openSearchPanel } from "@codemirror/search";
 import { vscodeKeymap } from "@replit/codemirror-vscode-keymap";
 import { autocompletion, closeBrackets, CompletionContext} from "@codemirror/autocomplete";
 import {EditorCompletions} from "./editorCompletions";
@@ -7,6 +8,7 @@ import PluginEnhanceEditor from "../index";
 import {githubLight} from "@ddietr/codemirror-themes/github-light";
 import {githubDark} from "@ddietr/codemirror-themes/github-dark";
 import { isDev } from "../utils/constants";
+import { copyFileSync } from "fs";
 
 export class EditorLoader {
     // 标记是否textarea为自动更新
@@ -36,12 +38,11 @@ export class EditorLoader {
     }
 
     public unload() {
-        this.ref_textarea.style.display = "true";
-        this.ref_textarea.removeEventListener("input", this.updateTextarea.bind(this));
-        this.dragHandle.remove();
-        this.view.destroy();
-        this.container.remove();
-        console.log("unload");
+        this.ref_textarea && (this.ref_textarea.style.display = "true");
+        this.ref_textarea && this.ref_textarea.removeEventListener("input", this.updateTextarea.bind(this));
+        this.dragHandle && this.dragHandle.remove();
+        this.view && this.view.destroy();
+        this.container && this.container.remove();
     }
 
     private async loadCodeMirrorMath(
@@ -50,10 +51,9 @@ export class EditorLoader {
     ) {
         // 获取用户设置信息
         const userConfig = (window as unknown as {siyuan: any}).siyuan.config;
-        // 白天黑夜模式
+        // 白天黑夜模式，0是白，1是黑
         const mode  = userConfig.appearance.mode;
-        console.log(mode);
-        // 插入快捷键
+        // 插入快捷键，
         const keymapList = userConfig.keymap;
         if (isDev) console.log(keymapList);
 
@@ -130,10 +130,38 @@ export class EditorLoader {
             };
         }
 
+        // 设定快捷键透传
+        const keybinds:KeyBinding[] = [
+            {
+                key: "Mod-f", run: openSearchPanel, scope: "editor search-panel", preventDefault: true
+            },
+            {
+                key: "Mod-Enter", 
+                run: () => {
+                    ref_textarea.dispatchEvent(new KeyboardEvent("keydown", {
+                        key: "Enter",
+                        keyCode: 13,
+                        ctrlKey: true
+                    }));
+                    return true;
+                },
+                shift: () => {
+                    ref_textarea.dispatchEvent(new KeyboardEvent("keydown", {
+                        key: "Enter",
+                        keyCode: 13,
+                        ctrlKey: true,
+                        shiftKey: true
+                    }));
+                    return true;
+                }
+            }
+        ];
+        ref_textarea.addEventListener("keydown", e => console.log(e));
+
         const startState = EditorState.create({
             doc: ref_textarea.value,
             extensions: [
-                keymap.of(vscodeKeymap),
+                keymap.of([...keybinds,...vscodeKeymap]),
                 EditorView.lineWrapping,
                 EditorView.updateListener.of(this.updateTextarea.bind(this)),
                 autocompletion({
@@ -143,6 +171,7 @@ export class EditorLoader {
                 closeBrackets(),
                 editorTheme,
                 mode ? githubDark: githubLight,
+                
             ]
         });
         const view = new EditorView({

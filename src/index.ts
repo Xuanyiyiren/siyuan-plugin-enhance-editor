@@ -27,7 +27,7 @@ export default class PluginEnhanceEditor extends Plugin {
         this.isMobile = frontEnd === "mobile" || frontEnd === "browser-mobile";
 
         this.logger = createLogger("main");
-        this.logger.info("main");
+        this.logger.info("load");
     }
 
     async onLayoutReady() {
@@ -41,6 +41,7 @@ export default class PluginEnhanceEditor extends Plugin {
     onunload() {
         this.eventBus.off("open-noneditableblock", this.loadCodeMirror.bind(this));
         this.editorLoader.unload();
+        this.logger.info("unload");
     }
 
     private initHandleFunctions() {
@@ -49,7 +50,6 @@ export default class PluginEnhanceEditor extends Plugin {
 
     private async loadCodeMirror(ev: Event) {
         if (isDev) this.logger.info("事件触发open-noneditableblock, event=>", ev);
-        // console.log(ev);
         const protyle_util = (ev as any).detail.toolbar.subElement;
         this.editorLoader.loadCodeMirror(protyle_util);
         
