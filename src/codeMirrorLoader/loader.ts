@@ -4,7 +4,8 @@ import { vscodeKeymap } from "@replit/codemirror-vscode-keymap";
 import { autocompletion, closeBrackets, CompletionContext} from "@codemirror/autocomplete";
 import {EditorCompletions} from "./editorCompletions";
 import PluginEnhanceEditor from "../index";
-import { oneDark } from "@codemirror/theme-one-dark";
+import {githubLight} from "@ddietr/codemirror-themes/github-light";
+import {githubDark} from "@ddietr/codemirror-themes/github-dark";
 import { isDev } from "../utils/constants";
 
 export class EditorLoader {
@@ -40,6 +41,7 @@ export class EditorLoader {
         this.dragHandle.remove();
         this.view.destroy();
         this.container.remove();
+        console.log("unload");
     }
 
     private async loadCodeMirrorMath(
@@ -50,8 +52,11 @@ export class EditorLoader {
         const userConfig = (window as unknown as {siyuan: any}).siyuan.config;
         // 白天黑夜模式
         const mode  = userConfig.appearance.mode;
+        console.log(mode);
         // 插入快捷键
-        if (isDev) console.log(userConfig);
+        const keymapList = userConfig.keymap;
+        if (isDev) console.log(keymapList);
+
         // 右下角的可拖动手柄
         const dragHandle = document.createElement("div");
         // container.setAttribute("style", ref_textarea.style.cssText);
@@ -105,6 +110,9 @@ export class EditorLoader {
                 "max-height": "calc(-44px + 80vh)", 
                 "min-height": "48px", 
                 "min-width": "268px"
+            },
+            "&.cm-editor": {
+                "background-color": "transparent"
             }
         });
 
@@ -133,8 +141,8 @@ export class EditorLoader {
                     override: [mathCompletions]
                 }),
                 closeBrackets(),
-                oneDark,
-                editorTheme
+                editorTheme,
+                mode ? githubDark: githubLight,
             ]
         });
         const view = new EditorView({
