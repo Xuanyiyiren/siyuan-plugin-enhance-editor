@@ -1,4 +1,4 @@
-import PluginEnhanceEditor from "./index";
+import PluginEnhanceEditor from "../index";
 import { Completion, snippetCompletion } from "@codemirror/autocomplete";
 
 export class EditorCompletions {

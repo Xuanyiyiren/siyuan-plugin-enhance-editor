@@ -39,7 +39,8 @@ export default class PluginEnhanceEditor extends Plugin {
     }
 
     onunload() {
-        // this.openSideBar(false);
+        this.eventBus.off("open-noneditableblock", this.loadCodeMirror.bind(this));
+        this.editorLoader.unload();
     }
 
     private initHandleFunctions() {

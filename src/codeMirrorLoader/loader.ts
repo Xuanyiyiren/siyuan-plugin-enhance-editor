@@ -1,15 +1,21 @@
-import { EditorView, keymap } from "@codemirror/view";
+import { EditorView, keymap, ViewUpdate } from "@codemirror/view";
 import { EditorState } from "@codemirror/state";
 import { vscodeKeymap } from "@replit/codemirror-vscode-keymap";
 import { autocompletion, closeBrackets, CompletionContext} from "@codemirror/autocomplete";
 import {EditorCompletions} from "./editorCompletions";
 import PluginEnhanceEditor from "../index";
+import { oneDark } from "@codemirror/theme-one-dark";
+import { isDev } from "../utils/constants";
 
 export class EditorLoader {
     // 标记是否textarea为自动更新
     private updateMarker: boolean;
+    private dragHandle: HTMLElement;
+    private view: EditorView;
+    private ref_textarea: HTMLTextAreaElement;
+    private container: HTMLDivElement;
 
-    constructor(plugin: PluginEnhanceEditor){
+    constructor(private plugin: PluginEnhanceEditor){
         this.updateMarker = false;
     }
 
@@ -19,22 +25,41 @@ export class EditorLoader {
         const container = document.createElement("div");
         // container.setAttribute("style", ref_textarea.style.cssText);
         container.setAttribute("class", "b3-text-field--text");
-        container.setAttribute("style", "width:40vw;max-height: calc(-44px + 80vh); min-height: 48px; min-width: 268px; border-radius: 0 0 var(--b3-border-radius-b) var(--b3-border-radius-b); font-family: var(--b3-font-family-code);");
+        container.setAttribute("id", "editorEnhanceContainer");
+        container.setAttribute("style", "max-height: calc(-44px + 80vh); min-height: 48px; min-width: 268px; border-radius: 0 0 var(--b3-border-radius-b) var(--b3-border-radius-b); font-family: var(--b3-font-family-code)");
         ref_textarea.parentNode.insertBefore(container, ref_textarea);
         ref_textarea.style.display = "none";
+        this.ref_textarea = ref_textarea;
+        this.container = container;
         this.loadCodeMirrorMath(ref_textarea, container);
     }
 
-    public async loadCodeMirrorMath(
+    public unload() {
+        this.ref_textarea.style.display = "true";
+        this.ref_textarea.removeEventListener("input", this.updateTextarea.bind(this));
+        this.dragHandle.remove();
+        this.view.destroy();
+        this.container.remove();
+    }
+
+    private async loadCodeMirrorMath(
         ref_textarea: HTMLTextAreaElement, 
         container:HTMLDivElement
     ) {
+        // 获取用户设置信息
+        const userConfig = (window as unknown as {siyuan: any}).siyuan.config;
+        // 白天黑夜模式
+        const mode  = userConfig.appearance.mode;
+        // 插入快捷键
+        if (isDev) console.log(userConfig);
         // 右下角的可拖动手柄
         const dragHandle = document.createElement("div");
         // container.setAttribute("style", ref_textarea.style.cssText);
         dragHandle.setAttribute("style", "width: 0px; height: 0px; border-bottom:1em solid grey;border-left:1em solid transparent;position: absolute;bottom: 0;right: 0;cursor: nwse-resize;");
         container.appendChild(dragHandle);
         function processResize(container:HTMLElement, handle:HTMLElement) {
+            const scroll = container.querySelector(".cm-scroller") as HTMLElement;
+            if (isDev) console.log(scroll);
             let isResizing = false;
             let lastX = 0;
             let lastY = 0;
@@ -53,10 +78,10 @@ export class EditorLoader {
                 const deltaY = e.clientY - lastY;
     
                 const newWidth = container.offsetWidth + deltaX;
-                const newHeight = container.offsetHeight + deltaY;
+                const newHeight = scroll.offsetHeight + deltaY;
     
                 container.style.width = `${newWidth}px`;
-                container.style.height = `${newHeight}px`;
+                scroll.style.height = `${newHeight}px`;
     
                 lastX = e.clientX;
                 lastY = e.clientY;
@@ -66,7 +91,6 @@ export class EditorLoader {
                 isResizing = false;
             });
         }
-        processResize(container, dragHandle);
 
         //设定内部样式
         const editorTheme = EditorView.theme({
@@ -75,11 +99,17 @@ export class EditorLoader {
             },
             ".cm-line": {
                 "font-family": "var(--b3-font-family-code)"
+            },
+            ".cm-scroller": {
+                "overflow": "scroll",
+                "max-height": "calc(-44px + 80vh)", 
+                "min-height": "48px", 
+                "min-width": "268px"
             }
         });
 
         // 实时读取补全
-        const editorCompletions = new EditorCompletions(this);
+        const editorCompletions = new EditorCompletions(this.plugin);
         const completionList = await editorCompletions.get();
 
         function mathCompletions(context: CompletionContext) {
@@ -97,21 +127,13 @@ export class EditorLoader {
             extensions: [
                 keymap.of(vscodeKeymap),
                 EditorView.lineWrapping,
-                EditorView.updateListener.of((e) => {
-                    // 自动同步到原本的textarea中，并触发input事件
-                    const sync_val = e.state.doc.toString();
-                    ref_textarea.value = sync_val;
-                    this.updateMarker = true;
-                    ref_textarea.dispatchEvent(new Event("input", {
-                        bubbles: true,
-                        cancelable: true
-                    }));
-                }),
+                EditorView.updateListener.of(this.updateTextarea.bind(this)),
                 autocompletion({
                     defaultKeymap: false,
                     override: [mathCompletions]
                 }),
                 closeBrackets(),
+                oneDark,
                 editorTheme
             ]
         });
@@ -121,22 +143,38 @@ export class EditorLoader {
         });
 
         // 对原textarea的监听同步，兼容数学公式插件
-        ref_textarea.addEventListener("input", (e) => {
-            
-            if (this.updateMarker) {
-                this.updateMarker = false;
-                return;
-            }
-            view.dispatch({
-                changes: {
-                    from: 0,
-                    to: view.state.doc.length,
-                    insert: ref_textarea.value
-                }
-            });
-            
-        });
+        ref_textarea.addEventListener("input", this.updateFromTextarea.bind(this));
+        //处理handle
+        processResize(container, dragHandle);
+        this.dragHandle = dragHandle;
         
         view.focus();
+        this.view = view;
     }
+
+    private updateFromTextarea(ev: CustomEvent) {
+        if (this.updateMarker) {
+            this.updateMarker = false;
+            return;
+        }
+        this.view.dispatch({
+            changes: {
+                from: 0,
+                to: this.view.state.doc.length,
+                insert: this.ref_textarea.value
+            }
+        });
+    }
+
+    private updateTextarea(e: ViewUpdate) {
+        // 自动同步到原本的textarea中，并触发input事件
+        const sync_val = e.state.doc.toString();
+        this.ref_textarea.value = sync_val;
+        this.updateMarker = true;
+        this.ref_textarea.dispatchEvent(new Event("input", {
+            bubbles: true,
+            cancelable: true
+        }));
+    }
+
 }
