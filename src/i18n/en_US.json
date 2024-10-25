@@ -7,5 +7,10 @@
   "byePlugin": "Bye, Plugin!",
   "showDialog": "Show dialog",
   "removedData": "Data deleted",
-  "confirmRemove": "Confirm to delete the data in ${name}?"
+  "confirmRemove": "Confirm to delete the data in ${name}?",
+  "insertEmoji": "Insert Emoji",
+  "name": "Sidebar Memos",
+  "openSidebarMemo": "Open Sidebar Memos",
+  "closeSidebarMemo": "Close Sidebar Memos",
+  "noEnoughPaddingRight": "No enough padding at the right of editor."
 }

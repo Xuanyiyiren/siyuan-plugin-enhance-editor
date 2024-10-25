@@ -1,18 +1,18 @@
 {
-  "name": "plugin-sample",
-  "author": "Vanessa",
-  "url": "https://github.com/siyuan-note/plugin-sample",
-  "version": "0.1.6",
-  "minAppVersion": "2.9.0",
-  "backends": ["windows", "linux", "darwin"],
-  "frontends": ["desktop"],
+  "name": "siyuan-plugin-enhance-editor",
+  "author": "WingDr",
+  "url": "https://github.com/WingDr/siyuan-plugin-sidebar-memo",
+  "version": "0.2.3",
+  "minAppVersion": "2.10.0",
+  "backends": ["all"],
+  "frontends": ["desktop", "desktop-window", "browser-desktop"],
   "displayName": {
-    "default": "Plugin Sample",
-    "zh_CN": "插件示例"
+    "default": "Enhanced Editor",
+    "zh_CN": "编辑器增强"
   },
   "description": {
-    "default": "This is a plugin sample",
-    "zh_CN": "这是一个插件示例"
+    "default": "Enhance the code editor of SiYuan.",
+    "zh_CN": "对现有的siyuan代码编辑器进行增强"
   },
   "readme": {
     "default": "README.md",
@@ -21,9 +21,6 @@
   "funding": {
     "openCollective": "",
     "patreon": "",
-    "github": "",
-    "custom": [
-      "https://ld246.com/sponsor"
-    ]
+    "github": ""
   }
 }
