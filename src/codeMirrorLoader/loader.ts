@@ -8,7 +8,7 @@ import PluginEnhanceEditor from "../index";
 import {githubLight} from "@ddietr/codemirror-themes/github-light";
 import {githubDark} from "@ddietr/codemirror-themes/github-dark";
 import { isDev } from "../utils/constants";
-import { copyFileSync } from "fs";
+import { history, redo, undo } from "@codemirror/commands";
 
 export class EditorLoader {
     // 标记是否textarea为自动更新
@@ -133,7 +133,25 @@ export class EditorLoader {
         // 设定快捷键透传
         const keybinds:KeyBinding[] = [
             {
-                key: "Mod-f", run: openSearchPanel, scope: "editor search-panel", preventDefault: true
+                key: "Mod-f", run: () => true, scope: "editor search-panel"
+            },
+            {
+                key: "Mod-h", run: openSearchPanel, scope: "editor search-panel", preventDefault: true
+            },
+            {
+                key: "Mod-z", run: () => {
+                    ref_textarea.dispatchEvent(new KeyboardEvent("keydown", {
+                        key: "z",
+                        keyCode: 90,
+                        ctrlKey: true
+                    }));
+                    return true;
+                }, scope: "editor", preventDefault: true,
+                shift: undo
+            },
+            {
+                key: "Mod-y", run: () => true, scope: "editor", preventDefault: true,
+                shift: redo
             },
             {
                 key: "Mod-Enter", 
@@ -171,6 +189,7 @@ export class EditorLoader {
                 closeBrackets(),
                 editorTheme,
                 mode ? githubDark: githubLight,
+                history()
                 
             ]
         });
