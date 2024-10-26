@@ -4,7 +4,7 @@
   "url": "https://github.com/WingDr/siyuan-plugin-enhance-editor",
   "version": "0.0.1",
   "minAppVersion": "3.1.10",
-  "backends": ["all"],
+  "backends": ["windows", "linux", "darwin"],
   "frontends": ["all"],
   "displayName": {
     "default": "Enhanced Editor",
