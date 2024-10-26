@@ -6,6 +6,8 @@
 
 After installing the plugin, it will automatically switch to the new editor when opening a formula block/HTML block editor and provide code hints.
 
+**Note: Due to some issues, the current undo shortcut in the editor is `Ctrl+Shift+Z`, the redo shortcut is `Ctrl+Shift+Y`, and the search shortcut is `Ctrl+F`.**
+
 ## Feature Preview
 
 This plugin primarily offers code hints for KaTex. Typing a backslash (`\`) will bring up a hint box.
