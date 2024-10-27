@@ -9,9 +9,11 @@ After installing the plugin, it will automatically switch to the new editor when
 ## Feature Preview
 
 This plugin primarily offers code hints for KaTex. Typing a backslash (`\`) will bring up a hint box.
+
 ![preview](./assets/preview.png)
 
 When used in conjunction with the [siyuan-math-enhance](https://github.com/zxhd863943427/siyuan-math-enhance) plugin, you can write formulas using LaTeX syntax and then correct them with the math enhancement plugin.
+
 ![gif](./assets/view.gif)
 
 ## Acknowledgements
