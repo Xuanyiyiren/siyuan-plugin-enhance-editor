@@ -1,12 +1,10 @@
 [中文](https://github.com/WingDr/siyuan-plugin-enhance-editor/blob/main/README_zh_CN.md)
 
-# Enhance　Editor
+# Enhance Editor
 
 ## Usage
 
-After installing the plugin, it will automatically switch to the new editor when opening a formula block/HTML block editor and provide code hints.
-
-**Note: Due to some issues, the current undo shortcut in the editor is `Ctrl+Shift+Z`, the redo shortcut is `Ctrl+Shift+Y`, and the search shortcut is `Ctrl+F`.**
+After installing the plugin, it will automatically switch to the new editor when opening a formula block/HTML block editor and provide code hints.The provided shortcuts in the editor are for Visual Studio Code.
 
 ## Feature Preview
 

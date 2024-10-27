@@ -9,6 +9,7 @@ import {githubLight} from "@ddietr/codemirror-themes/github-light";
 import {githubDark} from "@ddietr/codemirror-themes/github-dark";
 import { isDev } from "../utils/constants";
 import { history, redo, undo } from "@codemirror/commands";
+import { triggerAsyncId } from "async_hooks";
 
 export class EditorLoader {
     // 标记是否textarea为自动更新
@@ -133,25 +134,14 @@ export class EditorLoader {
         // 设定快捷键透传
         const keybinds:KeyBinding[] = [
             {
-                key: "Mod-f", run: () => true, scope: "editor search-panel"
+                key: "Mod-f", run: openSearchPanel, scope: "editor search-panel",stopPropagation:true, preventDefault: true
             },
             {
-                key: "Mod-h", run: openSearchPanel, scope: "editor search-panel", preventDefault: true
+                key: "Mod-z", run: undo, scope: "editor", preventDefault: true,
+                stopPropagation: true
             },
             {
-                key: "Mod-z", run: () => {
-                    ref_textarea.dispatchEvent(new KeyboardEvent("keydown", {
-                        key: "z",
-                        keyCode: 90,
-                        ctrlKey: true
-                    }));
-                    return true;
-                }, scope: "editor", preventDefault: true,
-                shift: undo
-            },
-            {
-                key: "Mod-y", run: () => true, scope: "editor", preventDefault: true,
-                shift: redo
+                key: "Mod-y", run: () => true, scope: "editor", preventDefault: true,stopPropagation: true
             },
             {
                 key: "Mod-Enter", 
