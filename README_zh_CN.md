@@ -16,6 +16,10 @@
 
 ![gif](./assets/view.gif)
 
+## 已知问题
+
+1. 不能和[Misuzu插件](https://github.com/Misuzu2027/syplugin-misuzu-custom)一起使用，会导致打开的编辑器无法调整大小。
+
 ## 致谢
 
 [CodeMirror官方站](https://codemirror.net/)

@@ -16,6 +16,10 @@ When used in conjunction with the [siyuan-math-enhance](https://github.com/zxhd8
 
 ![gif](./assets/view.gif)
 
+## Known Issues
+
+1. Incompatible with the [Misuzu](https://github.com/Misuzu2027/syplugin-misuzu-custom), which causes the opened editor to be unable to resize.
+
 ## Acknowledgements
 
 [CodeMirror Official Site](https://codemirror.net/)
