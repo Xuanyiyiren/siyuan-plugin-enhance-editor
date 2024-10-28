@@ -19,10 +19,16 @@ export class EditorLoader {
     private ref_textarea: HTMLTextAreaElement;
     private container: HTMLDivElement;
     private logger: ILogger;
+    private isResizing: boolean;
+    private lastX:number;
+    private lastY:number;
 
     constructor(private plugin: PluginEnhanceEditor){
         this.updateMarker = false;
         this.logger = createLogger("Codemirror Loader");
+        this.isResizing = false;
+        this.lastX = 0;
+        this.lastY = 0;
     }
 
     public unload() {
@@ -63,39 +69,6 @@ export class EditorLoader {
         // container.setAttribute("style", ref_textarea.style.cssText);
         dragHandle.setAttribute("style", "width: 0px; height: 0px; border-bottom:1em solid grey;border-left:1em solid transparent;position:absolute;bottom: 0;right: 0;cursor: nwse-resize;z-index:1");
         container.appendChild(dragHandle);
-        function processResize(container:HTMLElement, handle:HTMLElement) {
-            const scroll = container.querySelector(".cm-scroller") as HTMLElement;
-            let isResizing = false;
-            let lastX = 0;
-            let lastY = 0;
-    
-            handle.addEventListener("mousedown", (e) => {
-                e.preventDefault();
-                isResizing = true;
-                lastX = e.clientX;
-                lastY = e.clientY;
-            });
-    
-            window.addEventListener("mousemove", (e) => {
-                if (!isResizing) return;
-    
-                const deltaX = e.clientX - lastX;
-                const deltaY = e.clientY - lastY;
-    
-                const newWidth = container.offsetWidth + deltaX;
-                const newHeight = scroll.offsetHeight + deltaY;
-    
-                container.style.width = `${newWidth}px`;
-                scroll.style.height = `${newHeight}px`;
-    
-                lastX = e.clientX;
-                lastY = e.clientY;
-            });
-    
-            window.addEventListener("mouseup", () => {
-                isResizing = false;
-            });
-        }
 
         //设定内部样式
         const editorTheme = EditorView.theme({
@@ -166,16 +139,21 @@ export class EditorLoader {
             startState = await this.generateStateMath(ref_textarea, keybinds, editorTheme, mode);
         }
             
-
         const view = new EditorView({
             state:startState,
             parent: container
         });
 
         // 对原textarea的监听同步，兼容数学公式插件
+        ref_textarea.removeEventListener("input", this.updateFromTextarea.bind(this));
         ref_textarea.addEventListener("input", this.updateFromTextarea.bind(this));
-        //处理handle
-        processResize(container, dragHandle);
+        //处理handle，先remove再添加
+        dragHandle.removeEventListener("mousedown", this.handleMouseDown.bind(this));
+        window.removeEventListener("mousemove", this.handleMouseMove.bind(this));
+        window.removeEventListener("mouseup", this.handleMouseUp.bind(this));
+        dragHandle.addEventListener("mousedown", this.handleMouseDown.bind(this));
+        window.addEventListener("mousemove", this.handleMouseMove.bind(this));
+        window.addEventListener("mouseup", this.handleMouseUp.bind(this));
         this.dragHandle = dragHandle;
         
         view.focus();
@@ -262,6 +240,35 @@ export class EditorLoader {
         if (innerText === (window as unknown as {siyuan: any}).siyuan.languages["inline-math"] || innerText === (window as unknown as {siyuan: any}).siyuan.languages["math"]){
             return "math";
         } else return "unknown";
+    }
+
+    private handleMouseDown(e: MouseEvent) {
+        e.preventDefault();
+        this.isResizing = true;
+        this.lastX = e.clientX;
+        this.lastY = e.clientY;
+    }
+
+    private handleMouseMove(e: MouseEvent) {
+        const scroll = this.container.querySelector(".cm-scroller") as HTMLElement;
+        if (!this.isResizing) return;
+
+        const deltaX = e.clientX - this.lastX;
+        const deltaY = e.clientY - this.lastY;
+
+        const newWidth = this.container.offsetWidth + deltaX;
+        const newHeight = scroll.offsetHeight + deltaY;
+
+        this.container.style.width = `${newWidth}px`;
+        scroll.style.height = `${newHeight}px`;
+
+        this.lastX = e.clientX;
+        this.lastY = e.clientY;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    private handleMouseUp(e: MouseEvent) {
+        this.isResizing = false;
     }
 
 }
