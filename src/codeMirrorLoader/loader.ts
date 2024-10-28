@@ -1,5 +1,5 @@
 import { EditorView, KeyBinding, keymap, ViewUpdate } from "@codemirror/view";
-import { EditorState } from "@codemirror/state";
+import { EditorState, Extension } from "@codemirror/state";
 import { openSearchPanel } from "@codemirror/search";
 import { vscodeKeymap } from "@replit/codemirror-vscode-keymap";
 import { autocompletion, closeBrackets, CompletionContext} from "@codemirror/autocomplete";
@@ -9,6 +9,7 @@ import {githubLight} from "@ddietr/codemirror-themes/github-light";
 import {githubDark} from "@ddietr/codemirror-themes/github-dark";
 import { isDev } from "../utils/constants";
 import { history, redo, undo } from "@codemirror/commands";
+import { createLogger, ILogger } from "../utils/simple-logger";
 
 export class EditorLoader {
     // 标记是否textarea为自动更新
@@ -17,24 +18,11 @@ export class EditorLoader {
     private view: EditorView;
     private ref_textarea: HTMLTextAreaElement;
     private container: HTMLDivElement;
+    private logger: ILogger;
 
     constructor(private plugin: PluginEnhanceEditor){
         this.updateMarker = false;
-    }
-
-    public async loadCodeMirror(root: HTMLElement) {
-        const ref_textarea = root.querySelector("textarea");
-        // console.log(ref_textarea);
-        const container = document.createElement("div");
-        // container.setAttribute("style", ref_textarea.style.cssText);
-        container.setAttribute("class", "b3-text-field--text");
-        container.setAttribute("id", "editorEnhanceContainer");
-        container.setAttribute("style", "max-height: calc(-44px + 80vh); min-height: 48px; min-width: 268px; border-radius: 0 0 var(--b3-border-radius-b) var(--b3-border-radius-b); font-family: var(--b3-font-family-code);position:relative");
-        ref_textarea.parentNode.insertBefore(container, ref_textarea);
-        ref_textarea.style.display = "none";
-        this.ref_textarea = ref_textarea;
-        this.container = container;
-        this.loadCodeMirrorMath(ref_textarea, container);
+        this.logger = createLogger("Codemirror Loader");
     }
 
     public unload() {
@@ -45,17 +33,30 @@ export class EditorLoader {
         this.container && this.container.remove();
     }
 
-    private async loadCodeMirrorMath(
-        ref_textarea: HTMLTextAreaElement, 
-        container:HTMLDivElement
-    ) {
+    public async loadCodeMirror(root: HTMLElement) {
+        // 判断打开的块的类型
+        const type = this.detectBlockType(root);
+        // 如果是没做好处理的“未知”块就直接退出
+        if (type === "unknown") return;
+
         // 获取用户设置信息
         const userConfig = (window as unknown as {siyuan: any}).siyuan.config;
         // 白天黑夜模式，0是白，1是黑
         const mode  = userConfig.appearance.mode;
-        // 插入快捷键，
+        // 插入快捷键获取
         const keymapList = userConfig.keymap;
-        if (isDev) console.log(keymapList);
+        if (isDev) this.logger.info("获取到思源快捷键列表, keymap=>", keymapList);
+
+        const ref_textarea = root.querySelector("textarea");
+        const container = document.createElement("div");
+        const width = ref_textarea.style.width;
+        container.setAttribute("class", "b3-text-field--text");
+        container.setAttribute("id", "editorEnhanceContainer");
+        container.setAttribute("style", `width:${width};max-height: calc(-44px + 80vh); min-height: 48px; min-width: 268px; border-radius: 0 0 var(--b3-border-radius-b) var(--b3-border-radius-b); font-family: var(--b3-font-family-code);position:relative`);
+        ref_textarea.parentNode.insertBefore(container, ref_textarea);
+        ref_textarea.style.display = "none";
+        this.ref_textarea = ref_textarea;
+        this.container = container;
 
         // 右下角的可拖动手柄
         const dragHandle = document.createElement("div");
@@ -64,7 +65,6 @@ export class EditorLoader {
         container.appendChild(dragHandle);
         function processResize(container:HTMLElement, handle:HTMLElement) {
             const scroll = container.querySelector(".cm-scroller") as HTMLElement;
-            if (isDev) console.log(scroll);
             let isResizing = false;
             let lastX = 0;
             let lastY = 0;
@@ -116,20 +116,6 @@ export class EditorLoader {
             }
         });
 
-        // 实时读取补全
-        const editorCompletions = new EditorCompletions(this.plugin);
-        const completionList = await editorCompletions.get();
-
-        function mathCompletions(context: CompletionContext) {
-            const word = context.matchBefore(/(\\[\w\{\}]*)/);
-            if (!word || (word.from == word.to && !context.explicit))
-                return null;
-            return {
-                from: word.from,
-                options: completionList
-            };
-        }
-
         // 设定快捷键透传
         const keybinds:KeyBinding[] = [
             {
@@ -160,9 +146,68 @@ export class EditorLoader {
                         shiftKey: true
                     }));
                     return true;
-                }
+                },stopPropagation:true, preventDefault: true
+            },
+            {
+                key: "Escape",
+                run: () => {
+                    console.log("ESC");
+                    ref_textarea.dispatchEvent(new KeyboardEvent("keydown", {
+                        key: "Escape",
+                        keyCode: 27
+                    }));
+                    return true;
+                },stopPropagation:true, preventDefault: true
             }
         ];
+
+        let startState = null;
+        if (type === "math") {
+            startState = await this.generateStateMath(ref_textarea, keybinds, editorTheme, mode);
+        }
+            
+
+        const view = new EditorView({
+            state:startState,
+            parent: container
+        });
+
+        // 对原textarea的监听同步，兼容数学公式插件
+        ref_textarea.addEventListener("input", this.updateFromTextarea.bind(this));
+        //处理handle
+        processResize(container, dragHandle);
+        this.dragHandle = dragHandle;
+        
+        view.focus();
+        this.view = view;
+    }
+
+    private async generateStateMath(
+        ref_textarea:HTMLTextAreaElement,
+        keybinds: KeyBinding[],
+        editorTheme: Extension,
+        mode:any
+    ): Promise<EditorState> {
+        // 实时读取补全
+        const editorCompletions = new EditorCompletions(this.plugin);
+        const completionList = await editorCompletions.get();
+
+        function mathCompletions(context: CompletionContext) {
+            const word = context.matchBefore(/(\\[\w\{\}]*)/);
+            if (!word || (word.from == word.to && !context.explicit))
+                return null;
+            else if (word.text.indexOf("{") != -1) {
+                return {
+                    from: word.from,
+                    to: word.to + 1,
+                    options: completionList
+                };
+            }
+            return {
+                from: word.from,
+                options: completionList
+            };
+        }
 
         const startState = EditorState.create({
             doc: ref_textarea.value,
@@ -181,19 +226,7 @@ export class EditorLoader {
                 
             ]
         });
-        const view = new EditorView({
-            state:startState,
-            parent: container
-        });
-
-        // 对原textarea的监听同步，兼容数学公式插件
-        ref_textarea.addEventListener("input", this.updateFromTextarea.bind(this));
-        //处理handle
-        processResize(container, dragHandle);
-        this.dragHandle = dragHandle;
-        
-        view.focus();
-        this.view = view;
+        return startState;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -220,6 +253,15 @@ export class EditorLoader {
             bubbles: true,
             cancelable: true
         }));
+    }
+
+    private detectBlockType(protyleUtil:HTMLElement): string{
+        const title = protyleUtil.querySelector(".fn__flex-1.resize__move") as HTMLElement;
+        console.log(title);
+        const innerText = title.innerText;
+        if (innerText === (window as unknown as {siyuan: any}).siyuan.languages["inline-math"] || innerText === (window as unknown as {siyuan: any}).siyuan.languages["math"]){
+            return "math";
+        } else return "unknown";
     }
 
 }

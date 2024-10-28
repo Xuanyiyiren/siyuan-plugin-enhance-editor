@@ -52,6 +52,5 @@ export default class PluginEnhanceEditor extends Plugin {
         if (isDev) this.logger.info("事件触发open-noneditableblock, event=>", ev);
         const protyle_util = (ev as any).detail.toolbar.subElement;
         this.editorLoader.loadCodeMirror(protyle_util);
-        
     }
 }
