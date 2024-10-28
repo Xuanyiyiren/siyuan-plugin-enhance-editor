@@ -9,7 +9,6 @@ import {githubLight} from "@ddietr/codemirror-themes/github-light";
 import {githubDark} from "@ddietr/codemirror-themes/github-dark";
 import { isDev } from "../utils/constants";
 import { history, redo, undo } from "@codemirror/commands";
-import { triggerAsyncId } from "async_hooks";
 
 export class EditorLoader {
     // 标记是否textarea为自动更新
@@ -141,7 +140,7 @@ export class EditorLoader {
                 stopPropagation: true
             },
             {
-                key: "Mod-y", run: () => true, scope: "editor", preventDefault: true,stopPropagation: true
+                key: "Mod-y", run: redo, scope: "editor", preventDefault: true,stopPropagation: true
             },
             {
                 key: "Mod-Enter", 
@@ -197,6 +196,7 @@ export class EditorLoader {
         this.view = view;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     private updateFromTextarea(ev: CustomEvent) {
         if (this.updateMarker) {
             this.updateMarker = false;
