@@ -30,7 +30,7 @@ export class EditorLoader {
         // container.setAttribute("style", ref_textarea.style.cssText);
         container.setAttribute("class", "b3-text-field--text");
         container.setAttribute("id", "editorEnhanceContainer");
-        container.setAttribute("style", "max-height: calc(-44px + 80vh); min-height: 48px; min-width: 268px; border-radius: 0 0 var(--b3-border-radius-b) var(--b3-border-radius-b); font-family: var(--b3-font-family-code)");
+        container.setAttribute("style", "max-height: calc(-44px + 80vh); min-height: 48px; min-width: 268px; border-radius: 0 0 var(--b3-border-radius-b) var(--b3-border-radius-b); font-family: var(--b3-font-family-code);position:relative");
         ref_textarea.parentNode.insertBefore(container, ref_textarea);
         ref_textarea.style.display = "none";
         this.ref_textarea = ref_textarea;
@@ -61,7 +61,7 @@ export class EditorLoader {
         // 右下角的可拖动手柄
         const dragHandle = document.createElement("div");
         // container.setAttribute("style", ref_textarea.style.cssText);
-        dragHandle.setAttribute("style", "width: 0px; height: 0px; border-bottom:1em solid grey;border-left:1em solid transparent;position: absolute;bottom: 0;right: 0;cursor: nwse-resize;");
+        dragHandle.setAttribute("style", "width: 0px; height: 0px; border-bottom:1em solid grey;border-left:1em solid transparent;position:absolute;bottom: 0;right: 0;cursor: nwse-resize;z-index:1");
         container.appendChild(dragHandle);
         function processResize(container:HTMLElement, handle:HTMLElement) {
             const scroll = container.querySelector(".cm-scroller") as HTMLElement;
@@ -164,7 +164,6 @@ export class EditorLoader {
                 }
             }
         ];
-        ref_textarea.addEventListener("keydown", e => console.log(e));
 
         const startState = EditorState.create({
             doc: ref_textarea.value,
