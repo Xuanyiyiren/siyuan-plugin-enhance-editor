@@ -1,8 +1,12 @@
 import { EditorView, KeyBinding, keymap, ViewUpdate } from "@codemirror/view";
-import { EditorState, Extension } from "@codemirror/state";
+import { Compartment, EditorState, Extension } from "@codemirror/state";
 import { openSearchPanel } from "@codemirror/search";
 import { vscodeKeymap } from "@replit/codemirror-vscode-keymap";
 import { autocompletion, closeBrackets, CompletionContext} from "@codemirror/autocomplete";
+import { html } from "@codemirror/lang-html";
+import { javascript, javascriptLanguage } from "@codemirror/lang-javascript";
+import { sql } from "@codemirror/lang-sql";
+import { language } from "@codemirror/language";
 import {EditorCompletions} from "./editorCompletions";
 import PluginEnhanceEditor from "../index";
 import {githubLight} from "@ddietr/codemirror-themes/github-light";
@@ -135,8 +139,19 @@ export class EditorLoader {
         ];
 
         let startState = null;
-        if (type === "math") {
-            startState = await this.generateStateMath(ref_textarea, keybinds, editorTheme, mode);
+        switch (type) {
+            case "math":
+                startState = await this.generateStateMath(ref_textarea, keybinds, editorTheme, mode);
+                break;
+            case "sql/js":
+                startState = await this.generateStateSQLJS(ref_textarea, keybinds, editorTheme, mode);
+                break;
+            case "html":
+                startState = await this.generateStateHTML(ref_textarea, keybinds, editorTheme, mode);
+                break;
+            default:
+                startState = null;
+                break;
         }
             
         const view = new EditorView({
@@ -207,6 +222,67 @@ export class EditorLoader {
         return startState;
     }
 
+    private async generateStateSQLJS(
+        ref_textarea:HTMLTextAreaElement,
+        keybinds: KeyBinding[],
+        editorTheme: Extension,
+        mode:any
+    ): Promise<EditorState> {
+        const languageConf = new Compartment;
+        const docIsJs = /\/\/!js/.test(ref_textarea.value.slice(0, 20));
+
+        const autoLanguage = EditorState.transactionExtender.of(tr => {
+            if (!tr.docChanged) return null;
+            const docIsJs = /\/\/!js/.test(tr.newDoc.sliceString(0, 20));
+            const stateIsJs = tr.startState.facet(language) == javascriptLanguage;
+            if (docIsJs == stateIsJs) return null;
+            return {
+                effects: languageConf.reconfigure(docIsJs ? javascript() : sql())
+            };
+        });
+
+        const startState = EditorState.create({
+            doc: ref_textarea.value,
+            extensions: [
+                keymap.of([...keybinds,...vscodeKeymap]),
+                EditorView.lineWrapping,
+                EditorView.updateListener.of(this.updateTextarea.bind(this)),
+                languageConf.of(docIsJs ? javascript() : sql()),
+                autoLanguage,
+                autocompletion(),
+                editorTheme,
+                mode ? githubDark: githubLight,
+                history()
+                
+            ]
+        });
+        return startState;
+    }
+
+    private async generateStateHTML(
+        ref_textarea:HTMLTextAreaElement,
+        keybinds: KeyBinding[],
+        editorTheme: Extension,
+        mode:any
+    ): Promise<EditorState> {
+        const languageConf = new Compartment;
+        const startState = EditorState.create({
+            doc: ref_textarea.value,
+            extensions: [
+                keymap.of([...keybinds,...vscodeKeymap]),
+                EditorView.lineWrapping,
+                EditorView.updateListener.of(this.updateTextarea.bind(this)),
+                languageConf.of(html()),
+                autocompletion(),
+                editorTheme,
+                mode ? githubDark: githubLight,
+                history()
+                
+            ]
+        });
+        return startState;
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     private updateFromTextarea(ev: CustomEvent) {
         if (this.updateMarker) {
@@ -239,6 +315,10 @@ export class EditorLoader {
         const innerText = title.innerText;
         if (innerText === (window as unknown as {siyuan: any}).siyuan.languages["inline-math"] || innerText === (window as unknown as {siyuan: any}).siyuan.languages["math"]){
             return "math";
+        } else if (innerText === (window as unknown as {siyuan: any}).siyuan.languages["embedBlock"]){
+            return "sql/js";
+        } else if (innerText === "HTML"){
+            return "html";
         } else return "unknown";
     }
 
