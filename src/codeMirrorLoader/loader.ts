@@ -6,7 +6,7 @@ import { autocompletion, closeBrackets, CompletionContext} from "@codemirror/aut
 import { html } from "@codemirror/lang-html";
 import { javascript, javascriptLanguage } from "@codemirror/lang-javascript";
 import { sql } from "@codemirror/lang-sql";
-import { language } from "@codemirror/language";
+import { bracketMatching, language, matchBrackets } from "@codemirror/language";
 import {EditorCompletions} from "./editorCompletions";
 import PluginEnhanceEditor from "../index";
 import {githubLight} from "@ddietr/codemirror-themes/github-light";
@@ -90,6 +90,9 @@ export class EditorLoader {
             },
             "&.cm-editor": {
                 "background-color": "transparent"
+            },
+            ".cm-nonmatchingBracket": {
+                "background-color": "#bb555544 !important"
             }
         });
 
@@ -213,6 +216,7 @@ export class EditorLoader {
                     override: [mathCompletions]
                 }),
                 closeBrackets(),
+                bracketMatching(),
                 editorTheme,
                 mode ? githubDark: githubLight,
                 history()
@@ -250,6 +254,7 @@ export class EditorLoader {
                 languageConf.of(docIsJs ? javascript() : sql()),
                 autoLanguage,
                 autocompletion(),
+                bracketMatching(),
                 editorTheme,
                 mode ? githubDark: githubLight,
                 history()
@@ -301,6 +306,10 @@ export class EditorLoader {
     private updateTextarea(e: ViewUpdate) {
         // 自动同步到原本的textarea中，并触发input事件
         const sync_val = e.state.doc.toString();
+        // 如果内容相同就不触发，避免循环触发
+        if (this.ref_textarea.value === sync_val) {
+            return;
+        }
         this.ref_textarea.value = sync_val;
         this.updateMarker = true;
         this.ref_textarea.dispatchEvent(new Event("input", {
