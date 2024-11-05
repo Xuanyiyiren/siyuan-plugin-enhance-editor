@@ -41,6 +41,8 @@
     "@ddietr/codemirror-themes": "^1.4.4",
     "@codemirror/lang-html": "^6.4.9",
     "@codemirror/lang-javascript": "^6.2.2",
-    "@codemirror/lang-sql": "^6.8.0"
+    "@codemirror/lang-sql": "^6.8.0",
+    "prettier": "^3.3.3",
+    "prettier-plugin-latex": "^2.0.1"
   }
 }

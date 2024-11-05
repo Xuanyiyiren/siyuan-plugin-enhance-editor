@@ -6,13 +6,15 @@ import { autocompletion, closeBrackets, CompletionContext} from "@codemirror/aut
 import { html } from "@codemirror/lang-html";
 import { javascript, javascriptLanguage } from "@codemirror/lang-javascript";
 import { sql } from "@codemirror/lang-sql";
-import { bracketMatching, language, matchBrackets } from "@codemirror/language";
+import { bracketMatching, language } from "@codemirror/language";
 import {EditorCompletions} from "./editorCompletions";
 import PluginEnhanceEditor from "../index";
 import {githubLight} from "@ddietr/codemirror-themes/github-light";
 import {githubDark} from "@ddietr/codemirror-themes/github-dark";
 import { isDev } from "../utils/constants";
 import { history, redo, undo } from "@codemirror/commands";
+import * as prettier from "prettier";
+import * as prettierPluginLatex from "prettier-plugin-latex";
 import { createLogger, ILogger } from "../utils/simple-logger";
 
 export class EditorLoader {
@@ -205,8 +207,19 @@ export class EditorLoader {
             };
         }
 
+        const docValue = (await prettier.format(
+            "$" + ref_textarea.value + "$",
+            {
+                printWidth: 80,
+                useTabs: true,
+                tabWidth: 2,
+                parser: "latex-parser",
+                plugins: [prettierPluginLatex]
+            }
+        )).slice(1,-1);
+
         const startState = EditorState.create({
-            doc: ref_textarea.value,
+            doc: docValue,
             extensions: [
                 keymap.of([...keybinds,...vscodeKeymap]),
                 EditorView.lineWrapping,
