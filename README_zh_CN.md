@@ -6,6 +6,8 @@
 
 安装插件后，打开公式块/HTML块编辑器时会自动切换为新编辑器，并提供代码提示。编辑器内提供的是vscode快捷键设置。
 
+强烈推荐和[siyuan-plugin-math-enhance](https://github.com/zxhd863943427/siyuan-plugin-math-enhance)一起使用。
+
 ## 功能预览
 
 本插件主要提供KaTex的代码提示，键入`\`即可出现提示框。

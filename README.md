@@ -6,6 +6,8 @@
 
 After installing the plugin, it will automatically switch to the new editor when opening a formula block/HTML block editor and provide code hints.The provided shortcuts in the editor are for Visual Studio Code.
 
+It is highly recommended to use with [siyuan-plugin-math-enhance插件](https://github.com/zxhd863943427/siyuan-plugin-math-enhance).
+
 ## Feature Preview
 
 This plugin primarily offers code hints for KaTex. Typing a backslash (`\`) will bring up a hint box.
