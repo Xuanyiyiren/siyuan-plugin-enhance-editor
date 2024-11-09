@@ -95,6 +95,9 @@ export class EditorLoader {
             },
             ".cm-nonmatchingBracket": {
                 "background-color": "#bb555544 !important"
+            },
+            ".cm-tooltips-autocomplete": {
+                "z-index": 2
             }
         });
 
