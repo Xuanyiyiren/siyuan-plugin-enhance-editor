@@ -18,31 +18,12 @@ import * as prettierPluginLatex from "prettier-plugin-latex";
 import { createLogger, ILogger } from "../utils/simple-logger";
 
 export class EditorLoader {
-    // 标记是否textarea为自动更新
-    private updateMarker: boolean;
-    private dragHandle: HTMLElement;
-    private view: EditorView;
-    private ref_textarea: HTMLTextAreaElement;
-    private container: HTMLDivElement;
     private logger: ILogger;
-    private isResizing: boolean;
-    private lastX:number;
-    private lastY:number;
+    private ref_textarea_handle:() => void;
+    private mouse_down_handle: (e:MouseEvent) => void;
 
     constructor(private plugin: PluginEnhanceEditor){
-        this.updateMarker = false;
         this.logger = createLogger("Codemirror Loader");
-        this.isResizing = false;
-        this.lastX = 0;
-        this.lastY = 0;
-    }
-
-    public unload() {
-        this.ref_textarea && (this.ref_textarea.style.display = "true");
-        this.ref_textarea && this.ref_textarea.removeEventListener("input", this.updateTextarea.bind(this));
-        this.dragHandle && this.dragHandle.remove();
-        this.view && this.view.destroy();
-        this.container && this.container.remove();
     }
 
     public async loadCodeMirror(root: HTMLElement) {
@@ -67,8 +48,6 @@ export class EditorLoader {
         container.setAttribute("style", `width:${width};max-height: calc(-44px + 80vh); min-height: 48px; min-width: 268px; border-radius: 0 0 var(--b3-border-radius-b) var(--b3-border-radius-b); font-family: var(--b3-font-family-code);position:relative`);
         ref_textarea.parentNode.insertBefore(container, ref_textarea);
         ref_textarea.style.display = "none";
-        this.ref_textarea = ref_textarea;
-        this.container = container;
 
         // 右下角的可拖动手柄
         const dragHandle = document.createElement("div");
@@ -168,19 +147,51 @@ export class EditorLoader {
         });
 
         // 对原textarea的监听同步，兼容数学公式插件
-        ref_textarea.removeEventListener("input", this.updateFromTextarea.bind(this));
-        ref_textarea.addEventListener("input", this.updateFromTextarea.bind(this));
-        //处理handle，先remove再添加
-        dragHandle.removeEventListener("mousedown", this.handleMouseDown.bind(this));
-        window.removeEventListener("mousemove", this.handleMouseMove.bind(this));
-        window.removeEventListener("mouseup", this.handleMouseUp.bind(this));
-        dragHandle.addEventListener("mousedown", this.handleMouseDown.bind(this));
-        window.addEventListener("mousemove", this.handleMouseMove.bind(this));
-        window.addEventListener("mouseup", this.handleMouseUp.bind(this));
-        this.dragHandle = dragHandle;
+        this.ref_textarea_handle = () => {
+            if (view.state.doc.toString() == ref_textarea.value) {
+                return;
+            }
+            view.dispatch({
+                changes: {
+                    from: 0,
+                    to: view.state.doc.length,
+                    insert: ref_textarea.value
+                }
+            });
+        };
+        ref_textarea.addEventListener("input", this.ref_textarea_handle);
+        this.mouse_down_handle = (e:MouseEvent) => {
+            e.preventDefault();
+            let isResizing = true;
+            let lastX = e.clientX;
+            let lastY = e.clientY;
+            const handleMouseMove = () => {
+                const scroll = container.querySelector(".cm-scroller") as HTMLElement;
+                if (!isResizing) return;
         
+                const deltaX = e.clientX - lastX;
+                const deltaY = e.clientY - lastY;
+        
+                const newWidth = container.offsetWidth + deltaX;
+                const newHeight = scroll.offsetHeight + deltaY;
+        
+                container.style.width = `${newWidth}px`;
+                scroll.style.height = `${newHeight}px`;
+        
+                lastX = e.clientX;
+                lastY = e.clientY;
+            };
+            const handleMouseUp = () => {
+                isResizing = false;
+                window.removeEventListener("mousemove", handleMouseMove);
+                window.removeEventListener("mouseup", handleMouseUp);
+            };
+            window.addEventListener("mousemove", handleMouseMove);
+            window.addEventListener("mouseup", handleMouseUp);
+        };
+        dragHandle.addEventListener("mousedown", this.mouse_down_handle);
+    
         view.focus();
-        this.view = view;
     }
 
     private async generateStateMath(
@@ -226,7 +237,19 @@ export class EditorLoader {
             extensions: [
                 keymap.of([...keybinds,...vscodeKeymap]),
                 EditorView.lineWrapping,
-                EditorView.updateListener.of(this.updateTextarea.bind(this)),
+                EditorView.updateListener.of((e) => {
+                    // 自动同步到原本的textarea中，并触发input事件
+                    const sync_val = e.state.doc.toString();
+                    // 如果内容相同就不触发，避免循环触发
+                    if (ref_textarea.value === sync_val) {
+                        return;
+                    }
+                    ref_textarea.value = sync_val;
+                    ref_textarea.dispatchEvent(new Event("input", {
+                        bubbles: true,
+                        cancelable: true
+                    }));
+                }),
                 autocompletion({
                     defaultKeymap: false,
                     override: [mathCompletions]
@@ -266,7 +289,19 @@ export class EditorLoader {
             extensions: [
                 keymap.of([...keybinds,...vscodeKeymap]),
                 EditorView.lineWrapping,
-                EditorView.updateListener.of(this.updateTextarea.bind(this)),
+                EditorView.updateListener.of((e) => {
+                    // 自动同步到原本的textarea中，并触发input事件
+                    const sync_val = e.state.doc.toString();
+                    // 如果内容相同就不触发，避免循环触发
+                    if (ref_textarea.value === sync_val) {
+                        return;
+                    }
+                    ref_textarea.value = sync_val;
+                    ref_textarea.dispatchEvent(new Event("input", {
+                        bubbles: true,
+                        cancelable: true
+                    }));
+                }),
                 languageConf.of(docIsJs ? javascript() : sql()),
                 autoLanguage,
                 autocompletion(),
@@ -292,7 +327,19 @@ export class EditorLoader {
             extensions: [
                 keymap.of([...keybinds,...vscodeKeymap]),
                 EditorView.lineWrapping,
-                EditorView.updateListener.of(this.updateTextarea.bind(this)),
+                EditorView.updateListener.of((e) => {
+                    // 自动同步到原本的textarea中，并触发input事件
+                    const sync_val = e.state.doc.toString();
+                    // 如果内容相同就不触发，避免循环触发
+                    if (ref_textarea.value === sync_val) {
+                        return;
+                    }
+                    ref_textarea.value = sync_val;
+                    ref_textarea.dispatchEvent(new Event("input", {
+                        bubbles: true,
+                        cancelable: true
+                    }));
+                }),
                 languageConf.of(html()),
                 autocompletion(),
                 editorTheme,
@@ -304,39 +351,8 @@ export class EditorLoader {
         return startState;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    private updateFromTextarea(ev: CustomEvent) {
-        if (this.updateMarker) {
-            this.updateMarker = false;
-            return;
-        }
-        this.view.dispatch({
-            changes: {
-                from: 0,
-                to: this.view.state.doc.length,
-                insert: this.ref_textarea.value
-            }
-        });
-    }
-
-    private updateTextarea(e: ViewUpdate) {
-        // 自动同步到原本的textarea中，并触发input事件
-        const sync_val = e.state.doc.toString();
-        // 如果内容相同就不触发，避免循环触发
-        if (this.ref_textarea.value === sync_val) {
-            return;
-        }
-        this.ref_textarea.value = sync_val;
-        this.updateMarker = true;
-        this.ref_textarea.dispatchEvent(new Event("input", {
-            bubbles: true,
-            cancelable: true
-        }));
-    }
-
     private detectBlockType(protyleUtil:HTMLElement): string{
         const title = protyleUtil.querySelector(".fn__flex-1.resize__move") as HTMLElement;
-        console.log(title);
         const innerText = title.innerText;
         if (innerText === (window as unknown as {siyuan: any}).siyuan.languages["inline-math"] || innerText === (window as unknown as {siyuan: any}).siyuan.languages["math"]){
             return "math";
@@ -345,35 +361,6 @@ export class EditorLoader {
         } else if (innerText === "HTML"){
             return "html";
         } else return "unknown";
-    }
-
-    private handleMouseDown(e: MouseEvent) {
-        e.preventDefault();
-        this.isResizing = true;
-        this.lastX = e.clientX;
-        this.lastY = e.clientY;
-    }
-
-    private handleMouseMove(e: MouseEvent) {
-        const scroll = this.container.querySelector(".cm-scroller") as HTMLElement;
-        if (!this.isResizing) return;
-
-        const deltaX = e.clientX - this.lastX;
-        const deltaY = e.clientY - this.lastY;
-
-        const newWidth = this.container.offsetWidth + deltaX;
-        const newHeight = scroll.offsetHeight + deltaY;
-
-        this.container.style.width = `${newWidth}px`;
-        scroll.style.height = `${newHeight}px`;
-
-        this.lastX = e.clientX;
-        this.lastY = e.clientY;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    private handleMouseUp(e: MouseEvent) {
-        this.isResizing = false;
     }
 
 }

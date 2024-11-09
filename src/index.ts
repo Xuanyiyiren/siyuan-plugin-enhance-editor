@@ -40,7 +40,6 @@ export default class PluginEnhanceEditor extends Plugin {
 
     onunload() {
         this.eventBus.off("open-noneditableblock", this.loadCodeMirror.bind(this));
-        this.editorLoader.unload();
         this.logger.info("unload");
     }
 
