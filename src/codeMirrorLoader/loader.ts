@@ -1,5 +1,5 @@
 import { EditorView, KeyBinding, keymap, ViewUpdate } from "@codemirror/view";
-import { Compartment, EditorState, Extension } from "@codemirror/state";
+import { Compartment, EditorSelection, EditorState, Extension } from "@codemirror/state";
 import { openSearchPanel } from "@codemirror/search";
 import { vscodeKeymap } from "@replit/codemirror-vscode-keymap";
 import { autocompletion, closeBrackets, CompletionContext} from "@codemirror/autocomplete";
@@ -196,6 +196,12 @@ export class EditorLoader {
         dragHandle.addEventListener("mousedown", this.mouse_down_handle);
     
         view.focus();
+        view.dispatch({
+            selection: {
+                anchor: 0,
+                head: view.state.doc.length
+            }
+        });
     }
 
     private async generateStateMath(
