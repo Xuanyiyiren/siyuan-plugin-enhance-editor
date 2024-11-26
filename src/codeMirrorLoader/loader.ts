@@ -26,9 +26,9 @@ export class EditorLoader {
         this.logger = createLogger("Codemirror Loader");
     }
 
-    public async loadCodeMirror(root: HTMLElement) {
+    public async loadCodeMirror(root: HTMLElement, type: string) {
         // 判断打开的块的类型
-        const type = this.detectBlockType(root);
+        // const type = this.detectBlockType(root);
         // 如果是没做好处理的“未知”块就直接退出
         if (type === "unknown") return;
 
@@ -127,13 +127,16 @@ export class EditorLoader {
 
         let startState = null;
         switch (type) {
-            case "math":
+            case "inline-math":
                 startState = await this.generateStateMath(ref_textarea, keybinds, editorTheme, mode);
                 break;
-            case "sql/js":
+            case "NodeMathBlock":
+                startState = await this.generateStateMath(ref_textarea, keybinds, editorTheme, mode);
+                break;
+            case "NodeBlockQueryEmbed":
                 startState = await this.generateStateSQLJS(ref_textarea, keybinds, editorTheme, mode);
                 break;
-            case "html":
+            case "NodeHTMLBlock":
                 startState = await this.generateStateHTML(ref_textarea, keybinds, editorTheme, mode);
                 break;
             default:
@@ -162,15 +165,16 @@ export class EditorLoader {
         ref_textarea.addEventListener("input", this.ref_textarea_handle);
         this.mouse_down_handle = (e:MouseEvent) => {
             e.preventDefault();
+            const scroll = container.querySelector(".cm-scroller") as HTMLElement;
+            console.log(scroll);
             let isResizing = true;
             let lastX = e.clientX;
             let lastY = e.clientY;
-            const handleMouseMove = () => {
-                const scroll = container.querySelector(".cm-scroller") as HTMLElement;
+            const handleMouseMove = (move_ev:MouseEvent) => {
                 if (!isResizing) return;
         
-                const deltaX = e.clientX - lastX;
-                const deltaY = e.clientY - lastY;
+                const deltaX = move_ev.clientX - lastX;
+                const deltaY = move_ev.clientY - lastY;
         
                 const newWidth = container.offsetWidth + deltaX;
                 const newHeight = scroll.offsetHeight + deltaY;
@@ -178,8 +182,8 @@ export class EditorLoader {
                 container.style.width = `${newWidth}px`;
                 scroll.style.height = `${newHeight}px`;
         
-                lastX = e.clientX;
-                lastY = e.clientY;
+                lastX = move_ev.clientX;
+                lastY = move_ev.clientY;
             };
             const handleMouseUp = () => {
                 isResizing = false;

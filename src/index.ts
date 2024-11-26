@@ -50,6 +50,9 @@ export default class PluginEnhanceEditor extends Plugin {
     private async loadCodeMirror(ev: Event) {
         if (isDev) this.logger.info("事件触发open-noneditableblock, event=>", ev);
         const protyle_util = (ev as any).detail.toolbar.subElement;
-        this.editorLoader.loadCodeMirror(protyle_util);
+        const blockElement = (ev as any).detail.blockElement;
+        const renderElement = (ev as any).detail.renderElement as HTMLElement;
+        const renderType = renderElement.getAttribute("data-type");
+        this.editorLoader.loadCodeMirror(protyle_util, renderType);
     }
 }
