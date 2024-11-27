@@ -26,9 +26,9 @@ export class EditorLoader {
         this.logger = createLogger("Codemirror Loader");
     }
 
-    public async loadCodeMirror(root: HTMLElement, type: string) {
+    public async loadCodeMirror(root: HTMLElement, data_type: string) {
         // 判断打开的块的类型
-        // const type = this.detectBlockType(root);
+        const type = this.detectRenderType(data_type);
         // 如果是没做好处理的“未知”块就直接退出
         if (type === "unknown") return;
 
@@ -127,22 +127,22 @@ export class EditorLoader {
 
         let startState = null;
         switch (type) {
-            case "inline-math":
+            case "math":
                 startState = await this.generateStateMath(ref_textarea, keybinds, editorTheme, mode);
                 break;
-            case "NodeMathBlock":
-                startState = await this.generateStateMath(ref_textarea, keybinds, editorTheme, mode);
-                break;
-            case "NodeBlockQueryEmbed":
+            case "sql/js":
                 startState = await this.generateStateSQLJS(ref_textarea, keybinds, editorTheme, mode);
                 break;
-            case "NodeHTMLBlock":
+            case "html":
                 startState = await this.generateStateHTML(ref_textarea, keybinds, editorTheme, mode);
                 break;
             default:
                 startState = null;
                 break;
         }
+
+        // 避免漏判情况发生是还渲染编辑器
+        if (!startState) return; 
             
         const view = new EditorView({
             state:startState,
@@ -359,6 +359,21 @@ export class EditorLoader {
             ]
         });
         return startState;
+    }
+
+    private detectRenderType(data_type: string): string {
+        switch (data_type) {
+            case "inline-math":
+                return "math";
+            case "NodeMathBlock":
+                return "math";
+            case "NodeBlockQueryEmbed":
+                return "sql/js";
+            case "NodeHTMLBlock":
+                return "html";
+            default:
+                return "unknown";
+        }
     }
 
     private detectBlockType(protyleUtil:HTMLElement): string{
