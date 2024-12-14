@@ -316,6 +316,7 @@ export class EditorLoader {
                 autoLanguage,
                 autocompletion(),
                 bracketMatching(),
+                closeBrackets(),
                 editorTheme,
                 mode ? githubDark: githubLight,
                 history()
