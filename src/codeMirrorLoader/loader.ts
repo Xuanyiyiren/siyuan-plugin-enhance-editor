@@ -42,10 +42,9 @@ export class EditorLoader {
 
         const ref_textarea = root.querySelector("textarea");
         const container = document.createElement("div");
-        const width = ref_textarea.style.width;
         container.setAttribute("class", "b3-text-field--text");
         container.setAttribute("id", "editorEnhanceContainer");
-        container.setAttribute("style", `width:${width};max-height: calc(-44px + 80vh); min-height: 48px; min-width: 268px; border-radius: 0 0 var(--b3-border-radius-b) var(--b3-border-radius-b); font-family: var(--b3-font-family-code);position:relative`);
+        container.setAttribute("style", "width:100%;max-height: calc(-44px + 80vh); min-height: 48px; min-width: 268px; border-radius: 0 0 var(--b3-border-radius-b) var(--b3-border-radius-b); font-family: var(--b3-font-family-code);position:relative");
         ref_textarea.parentNode.insertBefore(container, ref_textarea);
         ref_textarea.style.display = "none";
 

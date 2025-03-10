@@ -21,5 +21,11 @@
         "label": "\\mathrm", 
         "apply": "\\mathrm{#{}}",
         "type": "function"
+    },
+    {
+        "displayLabel": "\\mathscr{}", 
+        "label": "\\mathscr", 
+        "apply": "\\mathscr{#{}}",
+        "type": "function"
     }
 ]
