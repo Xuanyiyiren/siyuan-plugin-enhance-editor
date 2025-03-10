@@ -1,5 +1,5 @@
-import { EditorView, KeyBinding, keymap, ViewUpdate } from "@codemirror/view";
-import { Compartment, EditorSelection, EditorState, Extension } from "@codemirror/state";
+import { EditorView, KeyBinding, keymap } from "@codemirror/view";
+import { Compartment, EditorState, Extension } from "@codemirror/state";
 import { openSearchPanel } from "@codemirror/search";
 import { vscodeKeymap } from "@replit/codemirror-vscode-keymap";
 import { autocompletion, closeBrackets, CompletionContext} from "@codemirror/autocomplete";
@@ -21,6 +21,7 @@ export class EditorLoader {
     private logger: ILogger;
     private ref_textarea_handle:() => void;
     private mouse_down_handle: (e:MouseEvent) => void;
+    private container_handle: (e:Event) => void;
 
     constructor(private plugin: PluginEnhanceEditor){
         this.logger = createLogger("Codemirror Loader");
@@ -148,6 +149,11 @@ export class EditorLoader {
             parent: container
         });
 
+        // 对container的监听，防止keydown数据冒泡触发其他东西
+        this.container_handle = (e) => {
+            e.stopPropagation();
+        };
+        container.addEventListener("keydown", this.container_handle);
         // 对原textarea的监听同步，兼容数学公式插件
         this.ref_textarea_handle = () => {
             if (view.state.doc.toString() == ref_textarea.value) {
@@ -193,7 +199,6 @@ export class EditorLoader {
             window.addEventListener("mouseup", handleMouseUp);
         };
         dragHandle.addEventListener("mousedown", this.mouse_down_handle);
-    
         view.focus();
         view.dispatch({
             selection: {

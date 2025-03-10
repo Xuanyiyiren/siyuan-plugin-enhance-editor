@@ -28,4 +28,25 @@
         "apply": "\\mathscr{#{}}",
         "type": "function"
     }
+    ,
+    {
+        "displayLabel": "\\bra{}", 
+        "label": "\\bra", 
+        "apply": "\\bra{#{}}",
+        "type": "function"
+    }
+    ,
+    {
+        "displayLabel": "\\ket{}", 
+        "label": "\\ket", 
+        "apply": "\\ket{#{}}",
+        "type": "function"
+    }
+    ,
+    {
+        "displayLabel": "\\braket{}", 
+        "label": "\\braket", 
+        "apply": "\\braket{#{}}",
+        "type": "function"
+    }
 ]
