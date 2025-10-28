@@ -6,7 +6,7 @@
 
 After installing the plugin, it will automatically switch to the new editor when opening a formula block/HTML block/embed block editor and provide code hints.The provided shortcuts in the editor are for Visual Studio Code.
 
-It is highly recommended to use with [siyuan-plugin-math-enhance插件](https://github.com/zxhd863943427/siyuan-plugin-math-enhance).
+It is highly recommended to use with [siyuan-plugin-math-enhance插件](https://github.com/Xuanyiyiren/siyuan-plugin-enhance-editor/blob/main/README_zh_CN.md).
 
 ## Feature Preview
 
