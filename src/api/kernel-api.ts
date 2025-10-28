@@ -27,7 +27,7 @@ import { BaseApi, type SiyuanData } from "./base-api";
 import { siyuanApiToken, siyuanApiUrl } from "../utils/constants";
 import { fetchPost } from "siyuan";
 /**
- * 思源笔记服务端API v2.8.8
+ * SiYuan server API v2.8.8
  *
  * @see {@link https://github.com/siyuan-note/siyuan/blob/master/API_zh_CN.md API}
  *
@@ -37,16 +37,16 @@ import { fetchPost } from "siyuan";
  */
 class KernelApi extends BaseApi {
   /**
-   * 列出笔记本
+   * List notebooks
    */
   public async lsNotebooks(): Promise<SiyuanData> {
     return await this.siyuanRequest("/api/notebook/lsNotebooks", {});
   }
 
   /**
-   * 打开笔记本
+   * Open a notebook
    *
-   * @param notebookId - 笔记本ID
+   * @param notebookId - Notebook ID
    */
   public async openNotebook(notebookId: string): Promise<SiyuanData> {
     return await this.siyuanRequest("/api/notebook/openNotebook", {
@@ -55,9 +55,9 @@ class KernelApi extends BaseApi {
   }
 
   /**
-   * 列出文件
+   * List files
    *
-   * @param path - 路径
+   * @param path - Path
    */
   public async readDir(path: string): Promise<SiyuanData> {
     return await this.siyuanRequest("/api/file/readDir", {
@@ -66,11 +66,11 @@ class KernelApi extends BaseApi {
   }
 
   /**
-   * 写入文件
+   * Write a file
    *
-   * @param path - 文件路径，例如：/data/20210808180117-6v0mkxr/20200923234011-ieuun1p.sy
-   * @param isDir - 是否是文件夹，如果为true则只创建文件夹，忽略文件
-   * @param file - 上传的文件
+   * @param path - File path, e.g. /data/20210808180117-6v0mkxr/20200923234011-ieuun1p.sy
+   * @param isDir - Whether it's a directory; if true, only create the folder
+   * @param file - File to upload
    */
   public putFile(path: string, isDir: boolean, file: any): Promise<SiyuanData> {
     const formData = new FormData();
@@ -105,10 +105,10 @@ class KernelApi extends BaseApi {
   }
 
   /**
-   * 读取文件
+   * Read a file
    *
-   * @param path - 文件路径，例如：/data/20210808180117-6v0mkxr/20200923234011-ieuun1p.sy
-   * @param type - 类型
+   * @param path - File path, e.g. /data/20210808180117-6v0mkxr/20200923234011-ieuun1p.sy
+   * @param type - Response type
    */
   public async getFile(path: string, type: "text" | "json" | "any") {
     const response = await fetch(`${siyuanApiUrl}/api/file/getFile`, {
@@ -132,11 +132,11 @@ class KernelApi extends BaseApi {
     } else if (response.status === 202) {
       const data = await response.json() as any;
       switch (data.code) {
-        case -1 : { console.error("参数解析错误", {msg: data.msg}); break; }
-        case 403 : { console.error("无访问权限 (文件不在工作空间下)", {msg: data.msg}); break; }
-        case 404 : { console.error("未找到 (文件不存在)", {msg: data.msg}); break; }
-        case 405 : { console.error("方法不被允许 (这是一个目录)", {msg: data.msg}); break; }
-        case 500 : { console.error("服务器错误 (文件查询失败 / 文件读取失败)", {msg: data.msg}); break; }
+        case -1 : { console.error("Parameter parsing error", {msg: data.msg}); break; }
+        case 403 : { console.error("No permission (file not in workspace)", {msg: data.msg}); break; }
+        case 404 : { console.error("Not found (file does not exist)", {msg: data.msg}); break; }
+        case 405 : { console.error("Method not allowed (this is a directory)", {msg: data.msg}); break; }
+        case 500 : { console.error("Server error (query/read failed)", {msg: data.msg}); break; }
       }
     }else {
       console.error(response);
@@ -145,10 +145,10 @@ class KernelApi extends BaseApi {
   }
 
   /**
-   * 移动工作空间外的文件
+   * Copy files from outside workspace into workspace
    *
-   * @param srcs - 要移动的源文件
-   * @param destDir - 工作空间中的目标路径
+   * @param srcs - Source file paths
+   * @param destDir - Target directory in workspace
    */
   public async globalCopyFiles(srcs: string[], destDir: string): Promise<SiyuanData> {
     const params = {
@@ -159,10 +159,10 @@ class KernelApi extends BaseApi {
   }
 
   /**
-   * 移动工作空间外的文件
+   * Rename a file
    *
-   * @param path - 要移动的源文件
-   * @param newPath - 工作空间中的目标路径
+   * @param path - Original path
+   * @param newPath - New path
    */
   public async renameFile(path: string, newPath: string): Promise<SiyuanData> {
     const params = {
@@ -173,9 +173,9 @@ class KernelApi extends BaseApi {
   }
 
   /**
-   * 删除文件
+   * Delete a file
    *
-   * @param path - 路径
+   * @param path - Path
    */
   public async removeFile(path: string): Promise<SiyuanData> {
     const params = {
@@ -185,11 +185,11 @@ class KernelApi extends BaseApi {
   }
 
   /**
-   * 通过 Markdown 创建文档
+   * Create a document from Markdown
    *
-   * @param notebook - 笔记本
-   * @param path - 路径
-   * @param md - md
+   * @param notebook - Notebook ID
+   * @param path - Path
+   * @param md - Markdown content
    */
   public async createDocWithMd(notebook: string, path: string, md: string): Promise<SiyuanData> {
     const params = {
@@ -201,15 +201,15 @@ class KernelApi extends BaseApi {
   }
 
   /**
-   * 导入 Markdown 文件
+   * Import a Markdown file
    *
-   * @param localPath - 本地 MD 文档绝对路径
-   * @param notebook - 笔记本
-   * @param path - 路径
+   * @param localPath - Absolute path to local MD file
+   * @param notebook - Notebook ID
+   * @param path - Target path
    */
   public async importStdMd(localPath: string, notebook: string, path: string): Promise<SiyuanData> {
     const params = {
-      // Users/terwer/Documents/mydocs/SiYuanWorkspace/public/temp/convert/pandoc/西蒙学习法：如何在短时间内快速学会新知识-友荣方略.md
+  // Example: Users/john/Documents/SiYuanWorkspace/public/temp/convert/pandoc/example.md
       localPath: localPath,
       notebook: notebook,
       toPath: path,

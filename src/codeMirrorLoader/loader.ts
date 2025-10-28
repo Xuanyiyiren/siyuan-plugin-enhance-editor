@@ -28,18 +28,18 @@ export class EditorLoader {
     }
 
     public async loadCodeMirror(root: HTMLElement, data_type: string) {
-        // 判断打开的块的类型
+        // Determine the block type to render
         const type = this.detectRenderType(data_type);
-        // 如果是没做好处理的“未知”块就直接退出
+        // Exit early if it's an unsupported/unknown block
         if (type === "unknown") return;
 
-        // 获取用户设置信息
+        // Get user settings from SiYuan
         const userConfig = (window as unknown as {siyuan: any}).siyuan.config;
-        // 白天黑夜模式，0是白，1是黑
+        // Appearance: 0 = light, 1 = dark
         const mode  = userConfig.appearance.mode;
-        // 插入快捷键获取
+        // Read keymap from SiYuan
         const keymapList = userConfig.keymap;
-        if (isDev) this.logger.info("获取到思源快捷键列表, keymap=>", keymapList);
+        if (isDev) this.logger.info("Fetched SiYuan keymap list =>", keymapList);
 
         const ref_textarea = root.querySelector("textarea");
         const container = document.createElement("div");
@@ -49,13 +49,13 @@ export class EditorLoader {
         ref_textarea.parentNode.insertBefore(container, ref_textarea);
         ref_textarea.style.display = "none";
 
-        // 顶部右侧的格式化切换控件
+        // Format mode selector (top-right of the editor)
         const fmtSelect = document.createElement("select");
         fmtSelect.setAttribute("style", "position:absolute;top:6px;right:8px;z-index:2;font-size:12px;padding:2px;background:var(--b3-theme-background);border:1px solid var(--b3-theme-surface-lighter);border-radius:4px;color:var(--b3-theme-on-surface)");
         const modes: Array<{value: "off"|"gentle"|"original", label: string}> = [
-            { value: "off", label: "关" },
-            { value: "gentle", label: "温" },
-            { value: "original", label: "原" },
+            { value: "off", label: "Off" },
+            { value: "gentle", label: "Gentle" },
+            { value: "original", label: "Original" },
         ];
     const currentMode = (this.plugin.data as any)["menu-config"]?.formattingMode ?? "off";
     container.dataset.formattingMode = currentMode;
@@ -66,7 +66,7 @@ export class EditorLoader {
             if (m.value === currentMode) opt.selected = true;
             fmtSelect.appendChild(opt);
         }
-        fmtSelect.title = "格式化: 关/温/原 (可切换)";
+        fmtSelect.title = "Format: Off/Gentle/Original (toggle)";
         container.appendChild(fmtSelect);
         fmtSelect.addEventListener("change", async () => {
             const modeVal = (fmtSelect.value as "off"|"gentle"|"original");
@@ -75,16 +75,16 @@ export class EditorLoader {
             if (typeof (this.plugin as any).saveData === "function") {
                 await (this.plugin as any).saveData("menu-config");
             }
-            if (isDev) this.logger.info("格式化模式切换为", modeVal);
+            if (isDev) this.logger.info("Formatting mode switched to", modeVal);
         });
 
-        // 右下角的可拖动手柄
+        // Resizable handle (bottom-right)
         const dragHandle = document.createElement("div");
         // container.setAttribute("style", ref_textarea.style.cssText);
         dragHandle.setAttribute("style", "width: 0px; height: 0px; border-bottom:1em solid grey;border-left:1em solid transparent;position:absolute;bottom: 0;right: 0;cursor: nwse-resize;z-index:1");
         container.appendChild(dragHandle);
 
-        //设定内部样式
+        // Internal theme/styles for the embedded editor
         const editorTheme = EditorView.theme({
             "&.cm-focused": {
                 outline: "none"
@@ -109,7 +109,7 @@ export class EditorLoader {
             }
         });
 
-        // 设定快捷键透传
+        // Keymap pass-through and overrides
         const keybinds:KeyBinding[] = [
             {
                 key: "Mod-f", run: openSearchPanel, scope: "editor search-panel",stopPropagation:true, preventDefault: true
@@ -170,7 +170,7 @@ export class EditorLoader {
                 break;
         }
 
-        // 避免漏判情况发生是还渲染编辑器
+    // Safety check: don't render if we couldn't build a state
         if (!startState) return; 
             
         const view = new EditorView({
@@ -178,12 +178,12 @@ export class EditorLoader {
             parent: container
         });
 
-        // 对container的监听，防止keydown数据冒泡触发其他东西
+        // Prevent keydown bubbling from container
         this.container_handle = (e) => {
             e.stopPropagation();
         };
         container.addEventListener("keydown", this.container_handle);
-        // 对原textarea的监听同步，兼容数学公式插件
+        // Keep syncing from CodeMirror to the original textarea (for compatibility)
         this.ref_textarea_handle = () => {
             if (view.state.doc.toString() == ref_textarea.value) {
                 return;
@@ -196,9 +196,9 @@ export class EditorLoader {
                 }
             });
         };
-        // 为避免外部（如其他插件或思源内置）在 input 时对 LaTeX 进行强制格式化，
-        // 数学模式下不再从 textarea -> CodeMirror 做反向同步，仅保留 CodeMirror -> textarea 的单向同步。
-        // 这样可以最大限度保留用户原始换行与括号。
+        // To avoid external formatters (plugins or SiYuan built-ins) forcing LaTeX formatting on input,
+        // in math mode we disable reverse sync (textarea -> CodeMirror) and keep a single direction
+        // (CodeMirror -> textarea) to preserve user newlines and braces as-is.
         const isMath = type === "math";
         if (!isMath) {
             ref_textarea.addEventListener("input", this.ref_textarea_handle);
@@ -250,7 +250,7 @@ export class EditorLoader {
         mode:any,
         container: HTMLElement
     ): Promise<EditorState> {
-        // 实时读取补全
+        // Load completions on demand
         const editorCompletions = new EditorCompletions(this.plugin);
         const completionList = await editorCompletions.get();
 
@@ -274,7 +274,7 @@ export class EditorLoader {
         const cfg = (this.plugin.data as any)["menu-config"] ?? { formattingMode: "off" };
         const formattingMode = cfg.formattingMode as ("off"|"gentle"|"original");
 
-        // 打开时是否自动格式化
+        // Auto-format on open only when using "original" mode
         const docValue = formattingMode === "original" ?
             (await prettier.format("$" + ref_textarea.value + "$", {
                 printWidth: 80,
@@ -285,7 +285,7 @@ export class EditorLoader {
             })).slice(1,-1) :
             ref_textarea.value;
 
-        // “温和”格式化：仅规范换行与去掉行尾空白
+        // "Gentle" formatting: normalize newlines and trim trailing spaces only
         const gentleRun = (view: EditorView) => {
             try {
                 const src = view.state.doc.toString();
@@ -294,11 +294,11 @@ export class EditorLoader {
                     view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: formatted } });
                 }
             } catch (e) {
-                if (isDev) this.logger.warn("手动格式化失败", e);
+                if (isDev) this.logger.warn("Manual format failed", e);
             }
             return true;
         };
-        // “原始”格式化：使用 Prettier 的 latex-parser
+        // "Original" formatting: use Prettier latex-parser
         const prettierRun = (view: EditorView) => {
             (async () => {
                 try {
@@ -315,15 +315,15 @@ export class EditorLoader {
                         view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: formatted } });
                     }
                 } catch (e) {
-                    if (isDev) this.logger.warn("手动格式化失败", e);
+                    if (isDev) this.logger.warn("Manual format failed", e);
                 }
             })();
             return true;
         };
-        // “关闭”格式化：按键不进行任何变动
+        // "Off" formatting: do nothing on hotkey
         const noopRun = (_view: EditorView) => true;
 
-        // 简易提示气泡
+        // Tiny overlay toast
         const flash = (text: string) => {
             const tip = document.createElement("div");
             tip.textContent = text;
@@ -332,29 +332,29 @@ export class EditorLoader {
             setTimeout(() => tip.remove(), 1000);
         };
 
-        // 动态读取当前模式，保证切换下拉后热键立即生效
+        // Read mode dynamically so the hotkey reflects the latest dropdown state
         const dynamicRun = (view: EditorView) => {
             const cur = ((container.dataset.formattingMode as any) ?? (this.plugin.data as any)["menu-config"]?.formattingMode ?? "off") as "off"|"gentle"|"original";
-            if (cur === "original") { const r = prettierRun(view); flash("格式化：原"); return r; }
-            if (cur === "gentle") { const r = gentleRun(view); flash("格式化：温"); return r; }
-            flash("格式化：关");
+            if (cur === "original") { const r = prettierRun(view); flash("Format: Original"); return r; }
+            if (cur === "gentle") { const r = gentleRun(view); flash("Format: Gentle"); return r; }
+            flash("Format: Off");
             return true; // off
         };
-        // 避开系统冲突热键：仅使用 Alt-Shift-F
+        // Avoid common system conflicts: use Alt-Shift-F only
         const formatCommandAlt: KeyBinding = { key: "Alt-Shift-f", run: dynamicRun, preventDefault: true, stopPropagation: true };
         const formatKeymap = Prec.high(keymap.of([formatCommandAlt]));
 
         const startState = EditorState.create({
             doc: docValue,
             extensions: [
-                // math 模式：仅在“原始”模式下启用 closeBrackets，以符合原仓库行为
+                // For math mode: enable closeBrackets only in "original" mode to match legacy behavior
                 keymap.of([...keybinds, ...vscodeKeymap]),
                 formatKeymap,
                 EditorView.lineWrapping,
                 EditorView.updateListener.of((e) => {
-                    // 自动同步到原本的textarea中，并触发input事件
+                    // Sync editor content to the original textarea and dispatch input
                     const sync_val = e.state.doc.toString();
-                    // 如果内容相同就不触发，避免循环触发
+                    // Avoid loops when content is the same
                     if (ref_textarea.value === sync_val) {
                         return;
                     }
@@ -379,10 +379,10 @@ export class EditorLoader {
         return startState;
     }
 
-    // 仅做温和的 LaTeX 格式化：
-    // - 统一换行符为 \n
-    // - 去除每行行尾空白
-    // - 保留用户的行结构与花括号，不做重排/重写
+    // Gentle LaTeX formatting only:
+    // - Normalize line endings to \n
+    // - Trim trailing whitespace per line
+    // - Preserve user line structure and braces, no reflow/rewrites
     private gentleFormatLatex(src: string): string {
         const normalized = src.replace(/\r\n?|\n/g, "\n");
         const lines = normalized.split("\n");
@@ -415,9 +415,9 @@ export class EditorLoader {
                 keymap.of([...keybinds,...vscodeKeymap]),
                 EditorView.lineWrapping,
                 EditorView.updateListener.of((e) => {
-                    // 自动同步到原本的textarea中，并触发input事件
+                    // Sync editor content to the original textarea and dispatch input
                     const sync_val = e.state.doc.toString();
-                    // 如果内容相同就不触发，避免循环触发
+                    // Avoid loops when content is the same
                     if (ref_textarea.value === sync_val) {
                         return;
                     }
@@ -454,9 +454,9 @@ export class EditorLoader {
                 keymap.of([...keybinds,...vscodeKeymap]),
                 EditorView.lineWrapping,
                 EditorView.updateListener.of((e) => {
-                    // 自动同步到原本的textarea中，并触发input事件
+                    // Sync editor content to the original textarea and dispatch input
                     const sync_val = e.state.doc.toString();
-                    // 如果内容相同就不触发，避免循环触发
+                    // Avoid loops when content is the same
                     if (ref_textarea.value === sync_val) {
                         return;
                     }

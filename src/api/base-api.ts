@@ -27,21 +27,21 @@ import { createLogger } from "../utils/simple-logger";
 import { isDev, siyuanApiToken, siyuanApiUrl } from "../utils/constants";
 
 /**
- * 思源 API 返回类型
+ * SiYuan API response type
  */
 export interface SiyuanData {
   /**
-   * 非 0 为异常情况
+   * Non-zero indicates an error
    */
   code: number
 
   /**
-   * 正常情况下是空字符串，异常情况下会返回错误文案
+   * Empty string when OK; error message if failed
    */
   msg: string
 
   /**
-   * 可能为 \{\}、[] 或者 NULL，根据不同接口而不同
+   * Can be {} / [] / NULL depending on the API
    */
   data: any[] | object | null | undefined
 }
@@ -54,10 +54,10 @@ export class BaseApi {
   }
 
   /**
-   * 向思源请求数据
+   * Send a request to SiYuan
    *
-   * @param url - url
-   * @param data - 数据
+   * @param url - api path
+   * @param data - payload
    */
   public async siyuanRequest(url: string, data: object): Promise<SiyuanData> {
     const reqUrl = `${siyuanApiUrl}${url}`;
@@ -75,14 +75,14 @@ export class BaseApi {
     }
 
     if (isDev) {
-      this.logger.info("开始向思源请求数据，reqUrl=>", reqUrl);
-      this.logger.info("开始向思源请求数据，fetchOps=>", fetchOps);
+      this.logger.info("Requesting SiYuan =>", reqUrl);
+      this.logger.info("Request options =>", fetchOps);
     }
 
     const response = await fetch(reqUrl, fetchOps);
     const resJson = (await response.json()) as SiyuanData;
     if (isDev) {
-      this.logger.info("思源请求数据返回，resJson=>", resJson);
+      this.logger.info("SiYuan response =>", resJson);
     }
 
     if (resJson.code === -1) {

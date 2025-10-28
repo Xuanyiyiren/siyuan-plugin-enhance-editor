@@ -24,7 +24,7 @@
  */
 
 /**
- * 简单的日志接口
+ * Simple logging interface
  */
 export interface ILogger {
   debug: (msg: string, obj?: any) => void
@@ -34,7 +34,7 @@ export interface ILogger {
 }
 
 /**
- * 一个简单轻量级的日志记录器
+ * A simple lightweight logger
  *
  * @author terwer
  * @version 1.0.0
