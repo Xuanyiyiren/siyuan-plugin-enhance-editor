@@ -20,7 +20,8 @@ export default class PluginEnhanceEditor extends Plugin {
 
     onload() {
         this.data[STORAGE_NAME] = {
-            openSideBarMemo: false
+            openSideBarMemo: false,
+            formattingMode: "off" // off | gentle | original
         };
 
         const frontEnd = getFrontend();
