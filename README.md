@@ -18,6 +18,35 @@ When used in conjunction with the [siyuan-math-enhance](https://github.com/zxhd8
 
 ![gif](./assets/view.gif)
 
+## New features (this iteration)
+
+These features were added on top of the original repository:
+
+- Formatting modes with quick toggle:
+	- Off: no formatting, no auto-brackets in math blocks.
+	- Gentle: whitespace-only cleanup (normalize newlines, trim trailing spaces), no reflow, no auto-brackets.
+	- Original: Prettier (prettier-plugin-latex) formatting and auto-brackets enabled.
+- A mode selector in the editor toolbar: “Format: Off/Gentle/Original”.
+- Manual format hotkey: Alt+Shift+F. A short overlay toast shows the current mode, e.g. “Format: Gentle”.
+- In math mode, reverse sync (textarea → editor) is disabled to prevent external forced formatting; editor → textarea sync remains.
+- UI labels, overlay text, logs, and all new strings are in English.
+
+Gentle mode example
+
+![Gentle Format](./assets/Gentel_Format.png)
+
+## Motivation and process
+
+- This iteration was primarily for my own use case. I previously had no experience with Node.js; the code changes were implemented by AI end-to-end.
+- All Chinese comments/strings in the adapted code paths were replaced with English by AI to keep the UI and outputs consistent.
+- AI used: GPT-5.
+
+Why these changes?
+
+- I strongly dislike Prettier's LaTeX formatting (aggressive reflow, auto-bracketing, etc.). The goal was to stop forced formatting by default and provide alternatives:
+	- Off to keep text exactly as typed.
+	- Gentle to do only safe whitespace cleanup without changing line structure.
+
 ## Known Issues
 
 1. Incompatible with the [Misuzu](https://github.com/Misuzu2027/syplugin-misuzu-custom), which causes the opened editor to be unable to resize.
