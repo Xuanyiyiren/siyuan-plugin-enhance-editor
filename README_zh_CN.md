@@ -1,4 +1,4 @@
-[English](https://github.com/WingDr/siyuan-plugin-enhance-editor/blob/main/README.md)
+[English](https://github.com/Xuanyiyiren/siyuan-plugin-enhance-editor/blob/main/README.md)
 
 # 增强编辑器
 
