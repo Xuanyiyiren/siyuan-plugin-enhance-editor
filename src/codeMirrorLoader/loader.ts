@@ -49,9 +49,9 @@ export class EditorLoader {
         ref_textarea.parentNode.insertBefore(container, ref_textarea);
         ref_textarea.style.display = "none";
 
-        // Format mode selector (top-right of the editor)
+    // Format mode selector (bottom-right of the editor)
         const fmtSelect = document.createElement("select");
-        fmtSelect.setAttribute("style", "position:absolute;top:6px;right:8px;z-index:2;font-size:12px;padding:2px;background:var(--b3-theme-background);border:1px solid var(--b3-theme-surface-lighter);border-radius:4px;color:var(--b3-theme-on-surface)");
+    fmtSelect.setAttribute("style", "position:absolute;bottom:8px;right:8px;z-index:2;font-size:12px;padding:2px;background:var(--b3-theme-background);border:1px solid var(--b3-theme-surface-lighter);border-radius:4px;color:var(--b3-theme-on-surface)");
         const modes: Array<{value: "off"|"gentle"|"original", label: string}> = [
             { value: "off", label: "Off" },
             { value: "gentle", label: "Gentle" },
@@ -323,11 +323,11 @@ export class EditorLoader {
         // "Off" formatting: do nothing on hotkey
         const noopRun = (_view: EditorView) => true;
 
-        // Tiny overlay toast
+        // Tiny overlay toast (bottom-right, above the selector)
         const flash = (text: string) => {
             const tip = document.createElement("div");
             tip.textContent = text;
-            tip.setAttribute("style", "position:absolute;top:6px;right:52px;z-index:3;padding:2px 6px;border-radius:4px;background:var(--b3-theme-surface);color:var(--b3-theme-on-surface);border:1px solid var(--b3-theme-surface-lighter);font-size:12px;opacity:0.95;pointer-events:none");
+            tip.setAttribute("style", "position:absolute;bottom:36px;right:8px;z-index:3;padding:2px 6px;border-radius:4px;background:var(--b3-theme-surface);color:var(--b3-theme-on-surface);border:1px solid var(--b3-theme-surface-lighter);font-size:12px;opacity:0.95;pointer-events:none");
             container.appendChild(tip);
             setTimeout(() => tip.remove(), 1000);
         };
